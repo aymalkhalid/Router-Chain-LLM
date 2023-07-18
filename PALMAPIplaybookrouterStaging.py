@@ -1,7 +1,8 @@
 from langchain.chains.router import MultiPromptChain
 from langchain.chains import ConversationChain
 from langchain.chains.llm import LLMChain
-from langchain.llms import OpenAI
+from langchain.llms import VertexAI
+from langchain.chat_models import ChatVertexAI
 from langchain.prompts import PromptTemplate
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
 from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
@@ -17,13 +18,13 @@ import os,json
 from dotenv import load_dotenv
 from flask import Flask,request 
 import os
-
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'dorsa-vertex-f83bdb4ebcd3.json'
 load_dotenv()
 #custom module
 app = Flask(__name__)
-
-@app.route('/chatgpt_langchain',methods=["POST"])
-def chatgpt_langchain():
+llm = ChatVertexAI(temperature=0)
+@app.route('/palmapi_langchain',methods=["POST"])
+def palmapi_langchain():
   request_json=request.get_json()
   ############
   #  This If Block Contains Langchain Router Chain to solve the problem of which use case to trigger based on a question. #
@@ -222,9 +223,6 @@ def chatgpt_langchain():
         }
     ]
 
-    llm = OpenAI(openai_api_key=os.getenv('OPENAI_API_KEY'),temperature=0)
-    #llm = ChatVertexAI(temperature=0)
-
     destination_chains = {}
     for p_info in prompt_infos:
         name = p_info["name"]
@@ -253,6 +251,9 @@ def chatgpt_langchain():
     chatgpt_result=chain.run(question)
     print(chatgpt_result)
     return chatgpt_result
+  ################
+  #State is Playbook
+  ################
   else: 
     api_source=str(request_json['learning_material'])   
     try: 
@@ -261,7 +262,6 @@ def chatgpt_langchain():
     except Exception as e:
        print("Exception:",str(e))       
     question=str(request_json['question'])
-    chat = ChatOpenAI(temperature=0)
     chat = ChatOpenAI(temperature=0, openai_api_key=os.getenv('OPENAI_API_KEY'))
     template = ("""You are Dorsa An AI powered Virtual Assistant In a chaotic health care setting, different medical equipment and implants play cardinal roles. Answering vitally important queries related to their location, quantity, and sizes efficiently is of utmost importance in ensuring smooth patient procedures. \n
               Be confident develop a system where we have a logic installed that any question asked, be it starting with 'how', 'what', 'where'. \n 
